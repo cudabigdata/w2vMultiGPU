@@ -639,7 +639,7 @@ void TrainModel() {
 			pthread_join(pt[a], NULL);
 
 		// update global syn0 from all GPUTrainer's syn0
-		if (local_iter % NUM_ITERATION_DO_SYNC_SYN0 == 0 || (local_iter == iter -1)){
+		if ((local_iter % NUM_ITERATION_DO_SYNC_SYN0 == 0) || (local_iter == iter -1)){
 			for (a = 0; a < vocab_size ; a++)
 				for (b = 0; b < layer1_size; b++)
 				{
