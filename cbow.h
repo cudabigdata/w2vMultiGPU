@@ -20,6 +20,8 @@
 #define MAX_GPU_SUPPORT 8
 typedef float real;
 
+#define NUM_ITERATION_DO_SYNC_SYN0 5
+
 #ifdef __APPLE__
 #include <OpenCL/opencl.h>
 #else

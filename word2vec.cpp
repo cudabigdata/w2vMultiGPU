@@ -628,23 +628,28 @@ void TrainModel() {
 	// loop iteration
 	for (unsigned int local_iter = 0; local_iter < iter; local_iter++){
 		// distribute global syn0 to all GPUTrainer's syn0
-		for (int i = 0; i < num_threads; i++)
-			gpuTrainers[i].updateSyn0(syn0);
+		if (local_iter % NUM_ITERATION_DO_SYNC_SYN0 == 0){
+			for (int i = 0; i < num_threads; i++)
+				gpuTrainers[i].updateSyn0(syn0);
+		}
 		// launch threads
 		for (a = 0; a < num_threads; a++)
 			pthread_create(&pt[a], NULL, TrainModelThread, (void *) a);
 		for (a = 0; a < num_threads; a++)
 			pthread_join(pt[a], NULL);
+
 		// update global syn0 from all GPUTrainer's syn0
-		for (a = 0; a < vocab_size ; a++)
-			for (b = 0; b < layer1_size; b++)
-			{
-				float value = 0;
-				int index = a * layer1_size_aligned + b;
-				for (int i = 0 ; i < num_threads; i++)
-					value += gpuTrainers[i].getSyn0()[index];
-				syn0[index] = value / num_threads;
-			}
+		if (local_iter % NUM_ITERATION_DO_SYNC_SYN0 == 0 || (local_iter == iter -1)){
+			for (a = 0; a < vocab_size ; a++)
+				for (b = 0; b < layer1_size; b++)
+				{
+					float value = 0;
+					int index = a * layer1_size_aligned + b;
+					for (int i = 0 ; i < num_threads; i++)
+						value += gpuTrainers[i].getSyn0()[index];
+					syn0[index] = value / num_threads;
+				}
+		}
 	}
 
 
