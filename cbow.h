@@ -50,11 +50,14 @@ class GPUTrainer
 
 	int * sen;
 	float * syn0;
-
+	int ComputeUnits;
+	float startOffset;
+	float endOffset;
 	void setCbowArgs();
 	void transferDataToGPU();
 
 public:
+	int getComputeUnit() {  return ComputeUnits;}
 	int * getSentencePtr() { return sen;}
 	GPUTrainer(cl_device_id device);
 	void initialWithSource(const char * src, size_t size);
@@ -63,6 +66,9 @@ public:
 	void getResultData();
 	void updateSyn0(float * g_syn0);
 	float * getSyn0() { return syn0;}
+	void setWorkingRange(float start, float end) { startOffset = start; endOffset = end;}
+	float getStart() { return startOffset;}
+	float getEnd() { return endOffset;}
 };
 
 

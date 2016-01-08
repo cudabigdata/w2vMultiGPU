@@ -34,6 +34,9 @@ GPUTrainer::GPUTrainer(cl_device_id device)
 	// Create a command queue
 	command_queue = clCreateCommandQueue(context, device_id, 0, &ret);
 	openclCheck(ret);
+
+    ret = clGetDeviceInfo(device, CL_DEVICE_MAX_COMPUTE_UNITS,
+            sizeof(ComputeUnits), &ComputeUnits, NULL); openclCheck(ret)
 }
 
 void GPUTrainer::initialWithSource(const char * source_str, size_t size){
@@ -170,7 +173,7 @@ void initializeGPU()
 	cl_device_id* devices;
 	char* value;
 	size_t valueSize;
-    cl_uint maxComputeUnits;
+    cl_uint maxComputeUnits = 0;
     cl_int ret;
 	ret = clGetPlatformIDs(0, NULL, &platformCount); openclCheck(ret);
 	platforms = (cl_platform_id*) malloc(sizeof(cl_platform_id) * platformCount);
@@ -213,9 +216,11 @@ void initializeGPU()
             free(value);
 
             // print parallel compute units
+            cl_uint computeUnits;
             ret = clGetDeviceInfo(devices[j], CL_DEVICE_MAX_COMPUTE_UNITS,
-                    sizeof(maxComputeUnits), &maxComputeUnits, NULL); openclCheck(ret)
-            printf("\t\t%d.%d Parallel compute units: %d\n\n", j+1, 4, maxComputeUnits);
+                    sizeof(computeUnits), &computeUnits, NULL); openclCheck(ret)
+            printf("\t\t%d.%d Parallel compute units: %d\n\n", j+1, 4, computeUnits);
+            maxComputeUnits += computeUnits;
 
             GPUTrainer newGPUTrainer(devices[j]);
             gpuTrainers.push_back(newGPUTrainer);
@@ -260,7 +265,15 @@ void initializeGPU()
 	}
 
 	free(source_str);
-
+	// Set working range for each GPUTrainer
+	float start = 0;
+	for (unsigned int i = 0 ; i < gpuTrainers.size(); i++)
+	{
+		int computeUnit = gpuTrainers[i].getComputeUnit();
+		float end =(float)( computeUnit / (float) maxComputeUnits);
+		gpuTrainers[i].setWorkingRange(start, start + end);
+		start += end;
+	}
 }
 
 

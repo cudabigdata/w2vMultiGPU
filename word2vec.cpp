@@ -141,9 +141,9 @@ void buffered_readWord(int id) {
 	cur_pos[id]++;
 }
 
-void reset_read_word(int id) {
+void reset_read_word(int id, float offset = 0) {
 	file_size = lseek(buf_io_fd[id], 0, SEEK_END);
-	off_t ret = lseek(buf_io_fd[id], (file_size / num_threads) * id, SEEK_SET);
+	off_t ret = lseek(buf_io_fd[id], (int)(file_size * offset), SEEK_SET);
 
 	if (ret < 0) {
 		perror("lseek");
@@ -155,7 +155,7 @@ void reset_read_word(int id) {
 	fill_buffer(id);
 }
 
-int open_buffered_file(int id) {
+int open_buffered_file(int id, float offset = 0) {
 	if (buf_io_fd[id] != -1) {
 		printf("file already open");
 		exit(1);
@@ -168,7 +168,7 @@ int open_buffered_file(int id) {
 	if (posix_memalign((void**) &buf[id], alignment, IO_BLOCK_SIZE) != 0) {
 		perror("posix_memalign");
 	}
-	reset_read_word(id);
+	reset_read_word(id, offset );
 	return 1;
 
 }
@@ -528,9 +528,10 @@ void *TrainModelThread(void *id) {
 	//fseek(fi, file_size / (int)num_threads * (long)id, SEEK_SET);
 	//printf("opening file\n");
 
-	open_buffered_file(fid);
+	open_buffered_file(fid, gpuTrainers[fid].getStart());
 	//printf("resetting file\n");
 	//reset_read_word();
+	unsigned int maxPartialCount =(unsigned int)( train_words * (gpuTrainers[fid].getEnd() - gpuTrainers[fid].getStart()));
 
 	sentence_length = 0;
 	sentence_num = 0;
@@ -594,7 +595,7 @@ void *TrainModelThread(void *id) {
 		sentence_num = 0;
 		sentence_length = 0;
 
-		if (end_flag[fid] || (word_count > train_words / num_threads)) {
+		if (end_flag[fid] || (word_count > maxPartialCount)) {
 			word_count_actual += word_count - last_word_count;
 			break;
 		}
