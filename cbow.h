@@ -28,6 +28,42 @@ typedef float real;
 #include <CL/cl.h>
 #endif
 
+class MyBitMap{
+private:
+	unsigned int * bits;
+	unsigned int size;
+public:
+	MyBitMap(){
+		bits = NULL;
+		size = 0;
+	}
+	void setSize(unsigned int num){
+		size = (num + 31) / 32;
+		bits = new unsigned int[size];
+		for (unsigned int i = 0; i < size; i++)
+			bits[i] = 0;
+	}
+	~MyBitMap()
+	{
+		delete[] bits;
+	}
+	void setBit(unsigned int index){
+		unsigned int i = index / 32;
+		unsigned int flag = 1;
+		flag = flag << (31 - index % 32);
+		bits[i] = bits[i] | flag;
+	}
+	unsigned int getBit(unsigned int index){
+		unsigned int i = index / 32;
+		unsigned int flag = 1;
+		flag = flag << (31 - index % 32);
+		 if ((flag & bits[i]) == 0)
+			 return 0;
+		 else
+			 return 1;
+	}
+};
+
 class GPUTrainer
 {
 	cl_context context;
@@ -59,6 +95,7 @@ class GPUTrainer
 	void transferDataToGPU();
 
 public:
+	MyBitMap bitmap;
 	int getComputeUnit() {  return ComputeUnits;}
 	int * getSentencePtr() { return sen;}
 	GPUTrainer(cl_device_id device);

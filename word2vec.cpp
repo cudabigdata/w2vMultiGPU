@@ -576,6 +576,10 @@ void *TrainModelThread(void *id) {
 					continue;
 			}
 			sen[sentence_num * MAX_SENTENCE_LENGTH + sentence_length] = word;
+			if (gpuTrainers[fid].bitmap.getBit(word) == 0)
+			{
+				gpuTrainers[fid].bitmap.setBit(word);
+			}
 			sentence_length++;
 			if (sentence_length >= MAX_SENTENCE_LENGTH) {
 				alpha_ptr[sentence_num] = alpha;
@@ -644,10 +648,16 @@ void TrainModel() {
 				for (b = 0; b < layer1_size; b++)
 				{
 					float value = 0;
+					int c = 0;
 					int index = a * layer1_size_aligned + b;
 					for (int i = 0 ; i < num_threads; i++)
-						value += gpuTrainers[i].getSyn0()[index];
-					syn0[index] = value / num_threads;
+					{
+						if (gpuTrainers[i].bitmap.getBit(a)) {
+							value += gpuTrainers[i].getSyn0()[index];
+							c++;
+						}
+					}
+					syn0[index] = value / c;
 				}
 		}
 	}

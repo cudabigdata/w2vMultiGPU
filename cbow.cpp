@@ -133,6 +133,8 @@ void GPUTrainer::initialWithSource(const char * source_str, size_t size){
 
 	sen = (int*) malloc((MAX_SENTENCE_NUM * MAX_SENTENCE_LENGTH + MAX_SENTENCE_NUM) * sizeof(int));
 	posix_memalign((void **) &syn0, 128, (int) vocab_size * layer1_size_aligned * sizeof(real));
+
+	bitmap.setSize(vocab_size);
 }
 
 void GPUTrainer::setCbowArgs(){
