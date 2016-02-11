@@ -691,7 +691,7 @@ void TrainModel() {
 						}
 
 					}
-					syn1neg[index] = value / c;
+					syn1neg[index] = c > 0? (value / c) : 0;
 
 				}
 		}
