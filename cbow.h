@@ -88,6 +88,7 @@ class GPUTrainer
 
 	int * sen;
 	float * syn0;
+	float * syn1neg;
 	int ComputeUnits;
 	float startOffset;
 	float endOffset;
@@ -105,6 +106,8 @@ public:
 	void getResultData();
 	void updateSyn0(float * g_syn0);
 	float * getSyn0() { return syn0;}
+	void updateSyn1Neg(float * g_syn1neg);
+	float * getSyn1Neg() { return syn1neg;}
 	void setWorkingRange(float start, float end) { startOffset = start; endOffset = end;}
 	float getStart() { return startOffset;}
 	float getEnd() { return endOffset;}

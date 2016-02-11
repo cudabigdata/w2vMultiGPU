@@ -53,6 +53,7 @@ int file_size = 0, classes = 0;
 unsigned int word_count_actual = 0;
 real alpha = 0.025, starting_alpha, sample = 1e-3;
 real *syn0;
+real *syn1neg;
 
 clock_t start;
 
@@ -511,7 +512,22 @@ void InitNet() {
 			next_random = next_random * (unsigned int) 1664525 + 1013904223;
 			syn0[a * layer1_size_aligned + b] = (((next_random & 0xFFFF)
 					/ (real) 65536) - 0.5) / layer1_size;
+
 		}
+
+	if (negative > 0)
+	{
+		a = posix_memalign((void **) &syn1neg, 128,
+				(int) vocab_size * layer1_size_aligned * sizeof(real));
+		if (syn1neg == NULL) {
+			printf("Memory allocation failed\n");
+			exit(1);
+		}
+		for (a = 0; a < vocab_size; a++)
+			for (b = 0; b < layer1_size; b++) {
+				syn1neg[a * layer1_size_aligned + b] = 0;
+			}
+	}
 	//CreateBinaryTree();
 }
 
@@ -634,7 +650,10 @@ void TrainModel() {
 		// distribute global syn0 to all GPUTrainer's syn0
 		if (local_iter % NUM_ITERATION_DO_SYNC_SYN0 == 0){
 			for (int i = 0; i < num_threads; i++)
+			{
 				gpuTrainers[i].updateSyn0(syn0);
+				gpuTrainers[i].updateSyn1Neg(syn1neg);
+			}
 		}
 		// launch threads
 		for (a = 0; a < num_threads; a++)
@@ -658,6 +677,22 @@ void TrainModel() {
 						}
 					}
 					syn0[index] = value / c;
+
+					// update global syn1neg
+					value = 0;
+					c = 0;
+					index = a * layer1_size_aligned + b;
+					for (int i = 0 ; i < num_threads; i++)
+					{
+						if (gpuTrainers[i].getSyn1Neg()[index] > 0)
+						{
+							value += gpuTrainers[i].getSyn1Neg()[index];
+							c++;
+						}
+
+					}
+					syn1neg[index] = value / c;
+
 				}
 		}
 	}

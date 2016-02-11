@@ -133,6 +133,7 @@ void GPUTrainer::initialWithSource(const char * source_str, size_t size){
 
 	sen = (int*) malloc((MAX_SENTENCE_NUM * MAX_SENTENCE_LENGTH + MAX_SENTENCE_NUM) * sizeof(int));
 	posix_memalign((void **) &syn0, 128, (int) vocab_size * layer1_size_aligned * sizeof(real));
+	posix_memalign((void **) &syn1neg, 128, (int) vocab_size * layer1_size_aligned * sizeof(real));
 
 	bitmap.setSize(vocab_size);
 }
@@ -164,6 +165,7 @@ void GPUTrainer::cleanUpGPU(){
 
 	if (sen) free(sen);
 	if (syn0) free(syn0);
+	if (syn1neg) free(syn1neg);
 }
 
 
@@ -290,6 +292,10 @@ void GPUTrainer::getResultData(){
 			 vocab_size * layer1_size_aligned * sizeof(real) , syn0, 0, NULL, NULL);openclCheck(ret)
 	openclCheck(clFinish(command_queue));
 
+	ret = clEnqueueReadBuffer(command_queue, d_syn1neg, CL_TRUE, 0,
+			 vocab_size * layer1_size_aligned * sizeof(real) , syn1neg, 0, NULL, NULL);openclCheck(ret)
+	openclCheck(clFinish(command_queue));
+
 }
 
 
@@ -307,6 +313,12 @@ void GPUTrainer::trainGPU(int sentence_num) {
 void GPUTrainer::updateSyn0(float * g_syn0){
 	cl_int ret = clEnqueueWriteBuffer(command_queue, d_syn0, CL_TRUE, 0,
 			 vocab_size * layer1_size_aligned * sizeof(real) , g_syn0, 0, NULL, NULL);openclCheck(ret)
+	openclCheck(clFinish(command_queue));
+}
+
+void GPUTrainer::updateSyn1Neg(float * g_syn1neg){
+	cl_int ret = clEnqueueWriteBuffer(command_queue, d_syn1neg, CL_TRUE, 0,
+			 vocab_size * layer1_size_aligned * sizeof(real) , g_syn1neg, 0, NULL, NULL);openclCheck(ret)
 	openclCheck(clFinish(command_queue));
 }
 
